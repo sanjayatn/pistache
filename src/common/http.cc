@@ -166,8 +166,10 @@ namespace Private {
 
                 auto c = cursor.current();
                 if (c == ' ') {
+                    request->raw_params_.emplace_back(std::make_pair<std::string,std::string>(std::string(key), std::string()));
                     request->query_.add(std::move(key), "");
                 } else if (c == '&') {
+                    request->raw_params_.emplace_back(std::make_pair<std::string,std::string>(std::string(key), std::string()));
                     request->query_.add(std::move(key), "");
                     if (!cursor.advance(1)) return State::Again;
                 }
@@ -179,7 +181,14 @@ namespace Private {
                         return State::Again;
 
                     std::string value = valueToken.text();
-                    request->query_.add(std::move(key), std::move(value));
+                    request->raw_params_.emplace_back(std::make_pair<std::string,std::string>(std::string(key), std::string(value)));
+                    if (!request->query_.has(key)) {
+                        request->query_.add(std::move(key), std::move(value));
+                    } else {
+                        std::string newValue = request->query_.get(key).get();
+                        newValue += "," + value;
+                        request->query_.update(key, std::move(newValue));
+                    }
                     if (cursor.current() == '&') {
                         if (!cursor.advance(1)) return State::Again;
                     }
@@ -499,6 +508,11 @@ namespace Uri {
         params.insert(std::make_pair(std::move(name), std::move(value)));
     }
 
+    void
+    Query::update(std::string& name, std::string value) {
+        params[name] = std::move(value);
+    }
+
     Optional<std::string>
     Query::get(const std::string& name) const {
         auto it = params.find(name);
@@ -558,6 +572,12 @@ const Uri::Query&
 Request::query() const {
     return query_;
 }
+
+const std::vector<std::pair<std::string,std::string>>&
+Request::rawParams() const {
+    return raw_params_;
+}
+
 
 const CookieJar&
 Request::cookies() const {

@@ -100,6 +100,7 @@ namespace Uri {
         Query(std::initializer_list<std::pair<const std::string, std::string>> params);
 
         void add(std::string name, std::string value);
+        void update(std::string& name, std::string value);
         Optional<std::string> get(const std::string& name) const;
         bool has(const std::string& name) const;
         // Return empty string or "?key1=value1&key2=value2" if query exist
@@ -163,6 +164,7 @@ public:
 
     const Header::Collection& headers() const;
     const Uri::Query& query() const;
+    const std::vector<std::pair<std::string,std::string>>& rawParams() const;
 
     const CookieJar& cookies() const;
 
@@ -198,6 +200,7 @@ private:
     Method method_;
     std::string resource_;
     Uri::Query query_;
+    std::vector<std::pair<std::string,std::string>> raw_params_;
 
 #ifdef LIBSTDCPP_SMARTPTR_LOCK_FIXME
     std::weak_ptr<Tcp::Peer> peer_;
